@@ -1,0 +1,150 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Data;
+using System.Configuration;
+using System.Data.SqlClient;
+using System.Web;
+using System.Text.RegularExpressions;
+
+namespace InscolClass
+{
+/// <summary>
+/// DataBase Connectivity and Executive Function
+/// </summary>
+public class InscolDBExec
+{
+string sqlserver, database, userid, password;
+public string conStr;
+int cmdtimeout ;
+public string BaseURL;
+
+public InscolDBExec()
+{
+String CurrentURL = HttpContext.Current.Request.Url.Host;
+CurrentURL = CurrentURL.Replace("http://", "");
+CurrentURL = CurrentURL.Replace("https://", "");
+CurrentURL = CurrentURL.Replace("www.", "");
+String pattern = "(?<hostname>(\\w+\\.)*)(?<domainname>(\\w+\\.\\w+))";
+Match theMatch = Regex.Match(CurrentURL, pattern);
+String RootWeb = theMatch.Groups["domainname"].ToString();
+String SubDomain = theMatch.Groups["hostname"].ToString().Replace(".", "");
+String SubDomainDB = SubDomain + "_database";
+sqlserver = ConfigurationManager.AppSettings["SqlServer"];
+userid = ConfigurationManager.AppSettings["UserID"];
+password = ConfigurationManager.AppSettings["Password"];
+if (IsNumeric(RootWeb) || SubDomain == null || SubDomain == "")
+database = ConfigurationManager.AppSettings["DataBase"];
+else
+database = ConfigurationManager.AppSettings[SubDomainDB];
+cmdtimeout = Convert.ToInt16(ConfigurationManager.AppSettings["SqlCommandTime"]);
+conStr = "Connect Timeout=" + ConfigurationManager.AppSettings["SqlConnectionTime"] + ";pooling='true' ;Max Pool Size=200;Data Source=" + sqlserver + ";Initial Catalog=" + database + ";User ID=" + userid + ";Password=" + password;
+
+}
+
+public string GetCurrentDataBase()
+{
+String CurrentURL = HttpContext.Current.Request.Url.Host;
+CurrentURL = CurrentURL.Replace("http://", "");
+CurrentURL = CurrentURL.Replace("https://", "");
+CurrentURL = CurrentURL.Replace("www.", "");
+String pattern = "(?<hostname>(\\w+\\.)*)(?<domainname>(\\w+\\.\\w+))";
+Match theMatch = Regex.Match(CurrentURL, pattern);
+String RootWeb = theMatch.Groups["domainname"].ToString();
+String SubDomain = theMatch.Groups["hostname"].ToString().Replace(".", "");
+String SubDomainDB = SubDomain + "_database";
+
+if (IsNumeric(RootWeb) || SubDomain == null || SubDomain == "")
+database = ConfigurationManager.AppSettings["DataBase"];
+else
+database = ConfigurationManager.AppSettings[SubDomainDB];
+return database;
+
+}
+
+public DataSet SelectDataFromDB(SqlCommand sqlcmd)
+{
+SqlConnection con =new SqlConnection (conStr);
+sqlcmd.Connection =con;
+sqlcmd.CommandTimeout =cmdtimeout;
+SqlDataAdapter sda = new SqlDataAdapter(sqlcmd);
+DataSet ds =new DataSet();
+try
+{
+con.Open();
+sda.Fill(ds);
+con.Close();
+}
+catch
+{
+// ds.Clear();
+}
+finally
+{
+con.Close();
+}
+return ds;
+}
+public Boolean InsertUpdateDeleteToDB(SqlCommand sqlcmd)
+{
+
+SqlConnection con = new SqlConnection(conStr);
+sqlcmd.Connection = con;
+sqlcmd.CommandTimeout = cmdtimeout;
+try
+{
+con.Open();
+sqlcmd.ExecuteNonQuery();
+con.Close();
+return true;
+}
+catch
+{
+return false;
+}
+finally
+{
+con.Close();
+}
+}
+
+public string InsertUpdateDeleteToDBReturnValue(SqlCommand sqlcmd)
+{
+
+SqlConnection con = new SqlConnection(conStr);
+sqlcmd.Connection = con;
+sqlcmd.CommandTimeout = cmdtimeout;
+try
+{
+con.Open();
+sqlcmd.ExecuteNonQuery();
+con.Close();
+return Convert.ToString(sqlcmd.Parameters["@Output"].Value);
+}
+catch
+{
+return "E"; //E represents Error
+}
+finally
+{
+con.Close();
+}
+}
+
+private bool IsNumeric(string Value)
+{
+try
+{
+Convert.ToInt64(Value.Replace(".",""));
+return true;
+}
+catch
+{
+return false;
+}
+
+}
+
+}
+}
