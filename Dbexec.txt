@@ -8,19 +8,19 @@ using System.Data.SqlClient;
 using System.Web;
 using System.Text.RegularExpressions;
 
-namespace InscolClass
+namespace abcClass
 {
 /// <summary>
 /// DataBase Connectivity and Executive Function
 /// </summary>
-public class InscolDBExec
+public class DBExec
 {
 string sqlserver, database, userid, password;
 public string conStr;
 int cmdtimeout ;
 public string BaseURL;
 
-public InscolDBExec()
+public DBExec()
 {
 String CurrentURL = HttpContext.Current.Request.Url.Host;
 CurrentURL = CurrentURL.Replace("http://", "");
